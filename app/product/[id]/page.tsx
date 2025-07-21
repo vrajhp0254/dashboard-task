@@ -1,25 +1,34 @@
-export const dynamic = "force-dynamic";
+// app/product/[id]/page.tsx
+"use client";
 
+import { useParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import { fetchProductById } from "@/lib/api";
 import { Product } from "@/types/product";
-import { AddToCart } from "@/components/AddToCart";
 import Image from "next/image";
-import { notFound } from "next/navigation";
+import { AddToCart } from "@/components/AddToCart";
 
-interface ProductPageProps {
-  params: {
-    id: string;
-  };
-}
+export default function ProductPageClient() {
+  const { id } = useParams();
+  const [product, setProduct] = useState<Product | null>(null);
+  const [loading, setLoading] = useState(true);
 
-export default async function ProductPage({ params }: ProductPageProps) {
-  let product: Product;
+  useEffect(() => {
+    if (!id || typeof id !== "string") return;
 
-  try {
-    product = await fetchProductById(params.id);
-  } catch (err) {
-    return notFound();
-  }
+    fetchProductById(id)
+      .then((data) => {
+        setProduct(data);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Error fetching product:", err);
+        setLoading(false);
+      });
+  }, [id]);
+
+  if (loading) return <div className="p-6">Loading...</div>;
+  if (!product) return <div className="p-6">Product not found.</div>;
 
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-4">
@@ -32,6 +41,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
             width={400}
             height={400}
             className="object-contain w-full h-[300px]"
+            priority
           />
         </div>
         <div className="w-full md:w-1/2 space-y-4">
